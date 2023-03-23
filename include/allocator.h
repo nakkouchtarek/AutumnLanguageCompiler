@@ -1,3 +1,5 @@
+#pragma once
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdbool.h>
@@ -10,14 +12,17 @@ typedef struct Block
     bool allocated;
 } Block;
 
-typedef char* String;
-static char pool[25000] = {0x0};
-size_t heap_size = 0;
-Block blocks[255] = {0};
-int block_count = 0;
+typedef const char* String;
+static char pool[25000] = {0};
+
+extern size_t heap_size;
+extern Block blocks[255];
+extern int block_count;
 
 void* allocate(size_t size);
 void show_block(int i);
 void show_memory();
+void show_memory_blocks();
+void defragment();
 void free(void* t);
 void garbage_collector();

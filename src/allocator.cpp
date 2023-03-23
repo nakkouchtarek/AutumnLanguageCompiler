@@ -93,10 +93,10 @@ void garbage_collector()
 {
     for(int i=0; i < block_count ; i++)
     {
-        blocks[i] = {0};
         memset(blocks[i].start, 0, (size_t)((char*)(blocks[i].end) - (char*)(blocks[i].start)));
     }
 
+    memset(blocks, 0, sizeof(blocks));
     block_count = 0;
 }
 

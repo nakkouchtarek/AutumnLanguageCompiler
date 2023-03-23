@@ -1,0 +1,6 @@
+int x = 20 * 30;
+int test = 10;
+writeln("testewq");
+writeln("freshtext");
+read("tester test: ", x);
+write(x);

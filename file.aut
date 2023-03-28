@@ -1,6 +1,21 @@
-int x = 20 * 30;
-int test = 10;
-writeln("testewq");
-writeln("freshtext");
-read("tester test: ", x);
-write(x);
+string test = "ewq123 hello123 test";
+string test2 = "123";
+string test3 = test - test2;
+
+int o1 = 0;
+int o2 = 0;
+int x = 1;
+
+string ewq = "test";
+
+for i = 2;
+
+    for j = 2;
+        
+        if j = 1;
+            writeln("Jackpot");
+        endif;
+
+    end;
+
+end;

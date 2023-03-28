@@ -9,6 +9,13 @@ Token::Token(std::string t, std::string v)
     type = t;
 }
 
+Token::Token(std::string t, std::string v, std::string s)
+{
+    value = v;
+    type = t;
+    subtype = s;
+}
+
 void Token::set_type(std::string t)
 {
     type = t;
@@ -17,6 +24,11 @@ void Token::set_type(std::string t)
 void Token::set_value(std::string v)
 {
     value = v;
+}
+
+void Token::set_subtype(std::string s)
+{
+    subtype = s;
 }
 
 void Token::present()
@@ -32,4 +44,9 @@ std::string Token::get_type()
 std::string Token::get_value()
 {
     return value;
+}
+
+std::string Token::get_subtype()
+{
+    return subtype;
 }

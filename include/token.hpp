@@ -6,10 +6,11 @@ class Token
 {
 private:
     std::string type;
-    std::string subtype;
+    std::string subtype = "null";
     std::string value;
 public:
     Token();
+    Token(const Token& t);
     Token(std::string type, std::string value);
     Token(std::string type, std::string value, std::string subtype);
     void set_type(std::string);

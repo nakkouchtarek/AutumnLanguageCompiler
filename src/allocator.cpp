@@ -9,7 +9,7 @@
 #include <allocator.hpp>
 
 size_t heap_size = 0;
-Block blocks[255] = {0};
+Block blocks[255] = {{0}};
 int block_count = 0;
 
 // allocation
@@ -46,12 +46,9 @@ void* allocate(size_t size)
 
 void show_block(int i)
 {
-    int* ptr = (int*)blocks[i].start;
-        
     for(size_t j=0; j < (size_t)((char*)(blocks[i].end) - (char*)(blocks[i].start)) ; j++)
     {
         std::cout << (int*)((char*)blocks[i].start + j) << "->" << *((char*)blocks[i].start + j) << std::endl;
-        ptr++;
     } 
 }
 

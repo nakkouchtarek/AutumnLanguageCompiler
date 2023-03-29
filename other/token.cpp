@@ -3,13 +3,6 @@
 
 Token::Token(){}
 
-Token::Token(const Token &t)
-{
-    type = t.type;
-    value = t.value;
-    subtype = t.subtype;
-};
-
 Token::Token(std::string t, std::string v)
 {
     value = v;

@@ -1,9 +1,11 @@
-int ewq = 2;
+int ewq = 1;
+string op = "";
 
-for i = 2;
-    for j = 2;    
-        if j = 1;
-            writeln("wow");
-        endif;
-    end;
+for i = inf;
+    read("Opeator: ", op);
+
+    if op = "+":
+        writeln("hello");
+    endif;
+
 end;

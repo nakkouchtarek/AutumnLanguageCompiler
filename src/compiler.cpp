@@ -303,9 +303,11 @@ void handle_token(int &i)
                             {
                                 cond1 = mapped_variables[cond1]->get_value();
                             }
-                            else if (mapped_variables.count(cond2)>0)
+                            
+                            if (mapped_variables.count(cond2)>0)
                             {
                                 cond2 = mapped_variables[cond2]->get_value();
+                                
                             }
 
                             cond1.erase(remove(cond1.begin(), cond1.end(), '"'), cond1.end());
@@ -459,7 +461,18 @@ void handle_token(int &i)
                     std::string t1;
                     std::cout << tokens[i+1]->get_value().substr(1, tokens[i+1]->get_value().length()-2 );
                     getline( std::cin, t1 );
-                    mapped_variables[tokens[i+2]->get_value()]->set_value(t1);
+
+                    if (mapped_variables.count(tokens[i+2]->get_value())>0)
+                    {
+                        mapped_variables[tokens[i+2]->get_value()]->set_value(t1);
+                    }
+                    else
+                    {
+                        Token tmp = Token("VALUE", tokens[i+2]->get_value(), "string");
+                        mapped_variables[tokens[i+2]->get_value()] = (Token*)allocate(sizeof(Token));
+                        *mapped_variables[tokens[i+2]->get_value()] = std::move(tmp);
+                    }
+                    
                 }
             }
         }
@@ -558,6 +571,8 @@ void readFile()
     }
 
     handle_tokens();
+
+    //show_variables();
 }
 
 int main()

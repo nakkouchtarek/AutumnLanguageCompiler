@@ -1,11 +1,34 @@
-int ewq = 1;
-string op = "";
+int o1;
+int o2;
+int res;
+string op;
 
 for i = inf;
-    read("Opeator: ", op);
 
-    if op = "+":
-        writeln("hello");
+    read("Elem1: ", o1);
+    read("Operator: ", op);
+    read("Elem2: ", o2);
+
+    if op = "+";
+        res = o1 + o2;
     endif;
+
+    if op = "-";
+        res = o1 - o2;
+    endif;
+
+    if op = "*";
+        res = o1 * o2;
+    endif;
+
+    if op = "/";
+        res = o1 / o2;
+    endif;
+
+    if op = "exit":
+        exit(0);
+    endif;
+
+    writeln(res);
 
 end;

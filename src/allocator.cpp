@@ -9,7 +9,7 @@
 #include <allocator.hpp>
 
 size_t heap_size = 0;
-Block blocks[255] = {{0}};
+Block blocks[25000] = {{0}};
 int block_count = 0;
 
 // allocation

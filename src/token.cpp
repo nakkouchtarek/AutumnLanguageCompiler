@@ -40,7 +40,7 @@ void Token::set_subtype(std::string s)
 
 void Token::present()
 {
-    std::cout << "My type is " << type << " My value is " << value << std::endl;
+    std::cout << "My type is " << type << " My value is " << value << " My subtype is " << subtype << std::endl;
 }
 
 std::string Token::get_type()

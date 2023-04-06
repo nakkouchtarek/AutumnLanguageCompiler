@@ -16,11 +16,13 @@ std::vector<std::string> nature = {"OPERATOR","VALUE","TYPE","NAME","FUNCTION","
 std::vector<std::string> control = {"if","for","while","end","endif"};
 std::vector<std::string> operators = {"+","=","-","*","/",";","(",")","'","\""};
 std::vector<std::string> types = {"int", "string"};
-std::vector<std::pair<std::string, int>> functions = {{"write",1},{"read", 2},{"writeln",1}};
+std::vector<std::pair<std::string, int>> functions = {{"write",1},{"read", 2},{"writeln",1},{"exit",1}};
 
 std::vector<Token*> tokens;
 std::map<std::string, Token*> mapped_variables;
 std::map<std::string, std::string> mapped_functions;
+
+void handle_token(int i);
 
 int token_counter = 0;
 int line = 1;
@@ -79,8 +81,6 @@ void handle_word(std::string &word)
         int p = 0;
         std::vector<Token> tmp;
 
-        
-        
         for(int i=0;i<operators.size();i++)
         {
             if ( word == operators[i] )
@@ -113,8 +113,10 @@ void handle_word(std::string &word)
 
         if( t1.get_type() == "null" )
         {
-            if(tokens.size() > 0 && tokens[tokens.size()-1]->get_type() == "TYPE")
+            if( tokens.size() > 0 && tokens[tokens.size()-1]->get_type() == "TYPE" ) 
+            {
                 t1.set_type("NAME");
+            }
             else
             {
                 for(int i=0;i<functions.size();i++)
@@ -180,7 +182,15 @@ void handle_word(std::string &word)
 
             if ( t1.get_type() == "null" )
             {
-                t1.set_type("VALUE");
+                if( tokens.size() > 0 && tokens[tokens.size()-1]->get_value() == ";" )
+                {
+                    t1.set_type("NAME");
+                }
+                else
+                {
+                    t1.set_type("VALUE");
+                }
+                
                 t1.set_value(word);
             }
             
@@ -204,278 +214,392 @@ void handle_word(std::string &word)
     }
 }
 
-void handle_token(int &i)
+void handle_control(int i)
+{
+    if ( tokens[i]->get_value() == "for" )
+    {
+        int it;
+
+        if ( tokens[i+3]->get_value() == "inf" )
+        {
+            it = std::numeric_limits<int>::max();
+        }
+        else
+        {
+            it = std::stoi(tokens[i+3]->get_value());
+        }
+
+        Token tmp = Token("VALUE", "0", "int");
+        mapped_variables[tokens[i+1]->get_value()] = (Token*)allocate(sizeof(Token));
+        *mapped_variables[tokens[i+1]->get_value()] = std::move(tmp);
+
+        std::string it_name = tokens[i+1]->get_value();
+
+        i = i + 4;
+
+        int loop_counter = 0;
+        int t1 = i;
+
+        for(int j=0;j<it;j++)
+        {
+            mapped_variables[it_name]->set_value(std::to_string(j));
+
+            do 
+            {
+                t1++;
+
+                if(tokens[t1]->get_value() == "for")
+                {
+                    loop_counter++;
+                }
+
+                handle_token(t1);
+
+                if ( tokens[t1]->get_value() == "if" )
+                {
+                    do
+                    {
+                        t1++;
+                    } while ( tokens[t1]->get_value() != "endif" );
+                    
+                }
+                else if(tokens[t1]->get_value() == "end")
+                {
+                    loop_counter--;
+                }
+                
+            } while ( (loop_counter >= 0) || (tokens[t1]->get_value() != "end") );
+
+            t1 = i;
+        }
+
+        do
+        {
+            if ( tokens[i]->get_value() == "if" )
+            {
+                do
+                {
+                    i++;
+                } while ( tokens[i]->get_value() != "endif" );
+                
+            }
+
+            i++;
+
+        } while ( tokens[i]->get_value() != "end" );
+        
+    }
+    else if( tokens[i]->get_value() == "if" )
+    {
+        std::string cond1, cond2, op;
+        int t = i;
+
+        do 
+        {
+            t++;
+            
+            if( tokens[t]->get_type() == "VALUE" && tokens[t+1]->get_type() == "OPERATOR" && tokens[t+2]->get_type() == "VALUE" )
+            {
+                cond1 = tokens[t]->get_value(); 
+                cond2 = tokens[t+2]->get_value();
+
+                if (mapped_variables.count(cond1)>0)
+                {
+                    cond1 = mapped_variables[cond1]->get_value();
+                }
+                
+                if (mapped_variables.count(cond2)>0)
+                {
+                    cond2 = mapped_variables[cond2]->get_value();
+                    
+                }
+
+                cond1.erase(remove(cond1.begin(), cond1.end(), '"'), cond1.end());
+                cond2.erase(remove(cond2.begin(), cond2.end(), '"'), cond2.end());
+
+                t = t + 3;
+            }
+
+        } while ( tokens[t]->get_value() != ";" );
+
+        do 
+        {
+            t++;
+
+            if(cond1 == cond2)
+            {
+                handle_token(t);
+            }
+            
+        } while ( tokens[t]->get_value() != "endif" );
+        
+    }
+}
+
+void handle_type(int i)
+{
+    if ( tokens[i]->get_type() == "TYPE" && tokens[i+1]->get_type() == "NAME" && tokens[i+2]->get_value() == ";" )
+    {
+        Token tmp;
+
+        if ( tokens[i]->get_value() == "int" )
+            tmp = Token("VALUE", "0", "int");
+        else if ( tokens[i]->get_value() == "string" )
+            tmp = Token("VALUE", " ", "string");
+
+        mapped_variables[tokens[i+1]->get_value()] = (Token*)allocate(sizeof(Token));
+        *mapped_variables[tokens[i+1]->get_value()] = std::move(tmp);
+    }
+    else
+    {
+        int c = 3;
+        Token* last = tokens[i+c];
+
+        last->set_subtype(tokens[i]->get_value());
+
+        if(last->get_subtype() == "int")
+        {
+            int res, snd;
+
+            if (mapped_variables.count(last->get_value())>0)
+            {
+                res = std::stoi( mapped_variables[last->get_value()]->get_value() );
+            }
+            else
+            { 
+                res = std::stoi( last->get_value() );
+            }
+
+            do 
+            {
+                c++;
+
+                if ( tokens[i+c]->get_type() == "VALUE" )
+                {
+                    if (mapped_variables.count(tokens[i+c]->get_value())>0)
+                    {
+                        snd = std::stoi( mapped_variables[tokens[i+c]->get_value()]->get_value() );
+                    }
+                    else
+                    { 
+                        snd = std::stoi( tokens[i+c]->get_value() );
+                    }
+
+                    if ( tokens[i+c-1]->get_value() == "+" )
+                        res = res + snd ;
+                    if ( tokens[i+c-1]->get_value() == "-" )
+                        res = res - snd ;
+                    if ( tokens[i+c-1]->get_value() == "/" )
+                        res = res / snd ;
+                    if ( tokens[i+c-1]->get_value() == "*" )
+                        res = res * snd ;
+                }
+                    
+
+            } while ( tokens[i+c]->get_value() != ";" );
+
+            Token tmp = Token("VALUE", std::to_string(res), tokens[i]->get_value());
+            mapped_variables[tokens[i+1]->get_value()] = (Token*)allocate(sizeof(Token));
+            *mapped_variables[tokens[i+1]->get_value()] = std::move(tmp);
+        }
+        else if(last->get_subtype() == "string")
+        {
+            std::string res;
+            std::string snd;
+
+            if (mapped_variables.count(last->get_value())>0)
+            {
+                res = mapped_variables[last->get_value()]->get_value();
+            }
+            else
+            { 
+                res = tokens[i+c]->get_value();
+            }
+
+            do 
+            {
+                c++;
+
+                if ( tokens[i+c]->get_type() == "VALUE" )
+                {
+                    if (mapped_variables.count(tokens[i+c]->get_value())>0)
+                    {
+                        snd = mapped_variables[tokens[i+c]->get_value()]->get_value();
+                    }
+                    else
+                    { 
+                        snd = tokens[i+c]->get_value();
+                    }
+
+                    if ( tokens[i+c-1]->get_value() == "+" )
+                        res.append(snd);
+                    else if ( tokens[i+c-1]->get_value() == "-" )
+                        changeWord(res, snd);
+                }
+                    
+
+            } while ( tokens[i+c]->get_value() != ";" );
+
+            Token tmp = Token("VALUE", res, tokens[i]->get_value());
+            mapped_variables[tokens[i+1]->get_value()] = (Token*)allocate(sizeof(Token));
+            *mapped_variables[tokens[i+1]->get_value()] = std::move(tmp);
+        }
+    }
+}
+
+void handle_func(int i)
+{
+    if ( tokens[i]->get_value() == "write" )
+    {
+        if( tokens[i+1]->get_value()[0] != '"' )
+        {
+            std::string my_str = mapped_variables[tokens[i+1]->get_value()]->get_value();
+            my_str.erase(remove(my_str.begin(), my_str.end(), '"'), my_str.end());
+            std::cout << my_str;
+        }
+        else
+        {
+            std::cout << tokens[i+1]->get_value().substr(1, tokens[i+1]->get_value().length()-2 );
+        } 
+    }
+    else if ( tokens[i]->get_value() == "writeln" )
+    {
+        if( tokens[i+1]->get_value()[0] != '"' )
+        {
+            std::string my_str = mapped_variables[tokens[i+1]->get_value()]->get_value();
+            my_str.erase(remove(my_str.begin(), my_str.end(), '"'), my_str.end());
+            std::cout << my_str << std::endl;
+        }
+        else
+        {
+            std::cout << tokens[i+1]->get_value().substr(1, tokens[i+1]->get_value().length()-2 ) << std::endl;
+        } 
+    }
+    else if ( tokens[i]->get_value() == "read" )
+    {
+        std::string t1;
+        std::cout << tokens[i+1]->get_value().substr(1, tokens[i+1]->get_value().length()-2 );
+        getline( std::cin, t1 );
+
+        if (mapped_variables.count(tokens[i+2]->get_value())>0)
+        {
+            mapped_variables[tokens[i+2]->get_value()]->set_value(t1);
+        }
+        else
+        {
+            Token tmp = Token("VALUE", tokens[i+2]->get_value(), "string");
+            mapped_variables[tokens[i+2]->get_value()] = (Token*)allocate(sizeof(Token));
+            *mapped_variables[tokens[i+2]->get_value()] = std::move(tmp);
+        }
+        
+    }
+    else if ( tokens[i]->get_value() == "exit" )
+    {
+        int code = std::stoi(tokens[i+1]->get_value());
+        garbage_collector();
+        exit(code);
+    }
+}
+
+void handle_token(int i)
 {
     if(tokens[i]->get_value() != "" )
     {
-        //std::cout << tokens[i]->get_value() << "->" << tokens[i]->get_type() << std::endl;
-
-        if ( tokens[i]->get_type() == "CONTROL" )
+        if ( i > 0 && tokens[i-1]->get_value() == ";" && tokens[i]->get_type() == "NAME" )
         {
-                if ( tokens[i]->get_value() == "for" )
+            int c = 2;
+            Token* last = tokens[i];
+            last->set_subtype(mapped_variables[tokens[i]->get_value()]->get_subtype());
+
+            if(last->get_subtype() == "int")
+            {
+                int res, snd=0;
+                
+                if (mapped_variables.count(tokens[i+c]->get_value())>0)
                 {
-                    int it;
-
-                    if ( tokens[i+3]->get_value() == "inf" )
-                    {
-                        it = std::numeric_limits<int>::max();
-                    }
-                    else
-                    {
-                        it = std::stoi(tokens[i+3]->get_value());
-                    }
-
-                    Token tmp = Token("VALUE", "0", "int");
-                    mapped_variables[tokens[i+1]->get_value()] = (Token*)allocate(sizeof(Token));
-                    *mapped_variables[tokens[i+1]->get_value()] = std::move(tmp);
-
-                    std::string it_name = tokens[i+1]->get_value();
-
-                    i = i + 4;
-
-                    int loop_counter = 0;
-                    int t1 = i;
-
-                    for(int j=0;j<it;j++)
-                    {
-                        mapped_variables[it_name]->set_value(std::to_string(j));
-
-                        do 
-                        {
-                            t1++;
-
-                            if(tokens[t1]->get_value() == "for")
-                            {
-                                loop_counter++;
-                            }
-
-                            handle_token(t1);
-
-                            if ( tokens[t1]->get_value() == "if" )
-                            {
-                                do
-                                {
-                                    t1++;
-                                } while ( tokens[t1]->get_value() != "endif" );
-                                
-                            }
-                            else if(tokens[t1]->get_value() == "end")
-                            {
-                                loop_counter--;
-                            }
-                            
-                        } while ( (loop_counter >= 0) || (tokens[t1]->get_value() != "end") );
-
-                        t1 = i;
-                    }
-
-                    do
-                    {
-                        if ( tokens[i]->get_value() == "if" )
-                        {
-                            do
-                            {
-                                i++;
-                            } while ( tokens[i]->get_value() != "endif" );
-                            
-                        }
-
-                        i++;
-
-                    } while ( tokens[i]->get_value() != "end" );
-                    
+                    res = std::stoi( mapped_variables[tokens[i+c]->get_value()]->get_value() );
                 }
-                else if( tokens[i]->get_value() == "if" )
+                else
+                { 
+                    res = std::stoi( tokens[i+c]->get_value() );
+                }
+                
+                do 
                 {
-                    std::string cond1, cond2, op;
-                    int t = i;
+                    c++;
 
-                    do 
+                    if ( tokens[i+c]->get_type() == "VALUE" )
                     {
-                        t++;
-                        
-                        if( tokens[t]->get_type() == "VALUE" && tokens[t+1]->get_type() == "OPERATOR" && tokens[t+2]->get_type() == "VALUE" )
+                        if (mapped_variables.count(tokens[i+c]->get_value())>0)
                         {
-                            cond1 = tokens[t]->get_value(); 
-                            cond2 = tokens[t+2]->get_value();
-
-                            if (mapped_variables.count(cond1)>0)
-                            {
-                                cond1 = mapped_variables[cond1]->get_value();
-                            }
-                            
-                            if (mapped_variables.count(cond2)>0)
-                            {
-                                cond2 = mapped_variables[cond2]->get_value();
-                                
-                            }
-
-                            cond1.erase(remove(cond1.begin(), cond1.end(), '"'), cond1.end());
-                            cond2.erase(remove(cond2.begin(), cond2.end(), '"'), cond2.end());
-
-                            t = t + 3;
+                            snd = std::stoi( mapped_variables[tokens[i+c]->get_value()]->get_value() );
+                        }
+                        else
+                        { 
+                            snd = std::stoi( tokens[i+c]->get_value() );
                         }
 
-                    } while ( tokens[t]->get_value() != ";" );
-
-                    do 
-                    {
-                        t++;
-
-                        if(cond1 == cond2)
-                        {
-                            handle_token(t);
-                        }
+                        if ( tokens[i+c-1]->get_value() == "+" )
+                            res = res + snd ;
+                        if ( tokens[i+c-1]->get_value() == "-" )
+                            res = res - snd ;
+                        if ( tokens[i+c-1]->get_value() == "/" )
+                            res = res / snd ;
+                        if ( tokens[i+c-1]->get_value() == "*" )
+                            res = res * snd ;
+                    }
                         
-                    } while ( tokens[t]->get_value() != "endif" );
-                    
-                }
+                } while ( tokens[i+c]->get_value() != ";" );
+
+                mapped_variables[tokens[i]->get_value()]->set_value(std::to_string(res));
+            }
+            else if(last->get_subtype() == "string")
+            {
+                std::string res;
+                std::string snd;
+
+                res = tokens[i+c]->get_value();
+
+                do 
+                {
+                    c++;
+
+                    if ( tokens[i+c]->get_type() == "VALUE" )
+                    {
+                        if (mapped_variables.count(tokens[i+c]->get_value())>0)
+                        {
+                            snd = mapped_variables[tokens[i+c]->get_value()]->get_value();
+                        }
+                        else
+                        {
+                            snd = tokens[i+c]->get_value();
+                        }
+
+                        if ( tokens[i+c-1]->get_value() == "+" )
+                            res.append(snd);
+                        else if ( tokens[i+c-1]->get_value() == "-" )
+                            changeWord(res, snd);
+                    }
+                        
+
+                } while ( tokens[i+c]->get_value() != ";" );
+
+                mapped_variables[tokens[i+1]->get_value()]->set_value(res);
+            }
+        }
+        else if ( tokens[i]->get_type() == "CONTROL" )
+        {
+            handle_control(i);
         }
         else if ( tokens[i]->get_type() == "TYPE" )
         {
-                int c = 3;
-                Token* last = tokens[i+c];
-
-                last->set_subtype(tokens[i]->get_value());
-
-                if(last->get_subtype() == "int")
-                {
-                    int res;
-                    int snd;
-
-                    if (mapped_variables.count(last->get_value())>0)
-                    {
-                        res = std::stoi( mapped_variables[last->get_value()]->get_value() );
-                    }
-                    else
-                    { 
-                        res = std::stoi( last->get_value() );
-                    }
-
-                    do 
-                    {
-                        c++;
-
-                        if ( tokens[i+c]->get_type() == "VALUE" )
-                        {
-                            if (mapped_variables.count(tokens[i+c]->get_value())>0)
-                            {
-                                snd = std::stoi( mapped_variables[tokens[i+c]->get_value()]->get_value() );
-                            }
-                            else
-                            { 
-                                snd = std::stoi( tokens[i+c]->get_value() );
-                            }
-
-                            if ( tokens[i+c-1]->get_value() == "+" )
-                                res = res + snd ;
-                            if ( tokens[i+c-1]->get_value() == "-" )
-                                res = res - snd ;
-                            if ( tokens[i+c-1]->get_value() == "/" )
-                                res = res / snd ;
-                            if ( tokens[i+c-1]->get_value() == "*" )
-                                res = res * snd ;
-                        }
-                            
-
-                    } while ( tokens[i+c]->get_value() != ";" );
-
-                    Token tmp = Token("VALUE", std::to_string(res), tokens[i]->get_value());
-                    mapped_variables[tokens[i+1]->get_value()] = (Token*)allocate(sizeof(Token));
-                    *mapped_variables[tokens[i+1]->get_value()] = std::move(tmp);
-                }
-                else if(last->get_subtype() == "string")
-                {
-                    std::string res;
-                    std::string snd;
-
-                    if (mapped_variables.count(last->get_value())>0)
-                    {
-                        res = mapped_variables[last->get_value()]->get_value();
-                    }
-                    else
-                    { 
-                        res = tokens[i+c]->get_value();
-                    }
-
-                    do 
-                    {
-                        c++;
-
-                        if ( tokens[i+c]->get_type() == "VALUE" )
-                        {
-                            if (mapped_variables.count(tokens[i+c]->get_value())>0)
-                            {
-                                snd = mapped_variables[tokens[i+c]->get_value()]->get_value();
-                            }
-                            else
-                            { 
-                                snd = tokens[i+c]->get_value();
-                            }
-
-                            if ( tokens[i+c-1]->get_value() == "+" )
-                                res.append(snd);
-                            else if ( tokens[i+c-1]->get_value() == "-" )
-                                changeWord(res, snd);
-                        }
-                            
-
-                    } while ( tokens[i+c]->get_value() != ";" );
-
-                    Token tmp = Token("VALUE", res, tokens[i]->get_value());
-                    mapped_variables[tokens[i+1]->get_value()] = (Token*)allocate(sizeof(Token));
-                    *mapped_variables[tokens[i+1]->get_value()] = std::move(tmp);
-                }
-
-            }
-            else if ( tokens[i]->get_type() == "FUNCTION" )
-            {
-                if ( tokens[i]->get_value() == "write" )
-                {
-                    if( tokens[i+1]->get_value()[0] != '"' )
-                    {
-                        std::string my_str = mapped_variables[tokens[i+1]->get_value()]->get_value();
-                        my_str.erase(remove(my_str.begin(), my_str.end(), '"'), my_str.end());
-                        std::cout << my_str;
-                    }
-                    else
-                    {
-                        std::cout << tokens[i+1]->get_value().substr(1, tokens[i+1]->get_value().length()-2 );
-                    } 
-                }
-                else if ( tokens[i]->get_value() == "writeln" )
-                {
-                    if( tokens[i+1]->get_value()[0] != '"' )
-                    {
-                        std::string my_str = mapped_variables[tokens[i+1]->get_value()]->get_value();
-                        my_str.erase(remove(my_str.begin(), my_str.end(), '"'), my_str.end());
-                        std::cout << my_str << std::endl;
-                    }
-                    else
-                    {
-                        std::cout << tokens[i+1]->get_value().substr(1, tokens[i+1]->get_value().length()-2 ) << std::endl;
-                    } 
-                }
-                else if ( tokens[i]->get_value() == "read" )
-                {
-                    std::string t1;
-                    std::cout << tokens[i+1]->get_value().substr(1, tokens[i+1]->get_value().length()-2 );
-                    getline( std::cin, t1 );
-
-                    if (mapped_variables.count(tokens[i+2]->get_value())>0)
-                    {
-                        mapped_variables[tokens[i+2]->get_value()]->set_value(t1);
-                    }
-                    else
-                    {
-                        Token tmp = Token("VALUE", tokens[i+2]->get_value(), "string");
-                        mapped_variables[tokens[i+2]->get_value()] = (Token*)allocate(sizeof(Token));
-                        *mapped_variables[tokens[i+2]->get_value()] = std::move(tmp);
-                    }
-                    
-                }
-            }
+            handle_type(i);
         }
+        else if ( tokens[i]->get_type() == "FUNCTION" )
+        {
+            handle_func(i);        
+        }
+    }
 }
 
 void show_variables()
@@ -538,16 +662,30 @@ void readFile()
     std::string target;
     std::string tmp;
 
+    int c = 0;
+
     while (std::getline(file, word))
     {
         for (auto x : word)
         {
-            if ( x == ';' )
+            if ( x == '"' && c == 1 )
+            {
+                tmp = tmp + x;
+                handle_word(tmp);
+                tmp = "";
+                c = 0;
+            }
+            else if ( x == ';' )
             {
                 handle_word(tmp);
                 tmp = ";";
                 handle_word(tmp);
                 tmp = "";
+            }
+            else if ( x == '"' )
+            {
+                tmp = tmp + x;
+                c++;
             }
             else if (  x == ' ' && (tmp.find('"') == std::string::npos) )
             {

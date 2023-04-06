@@ -17,7 +17,7 @@ typedef const char* String;
 static char pool[25000] = {0};
 
 extern size_t heap_size;
-extern Block blocks[255];
+extern Block blocks[25000];
 extern int block_count;
 
 void* allocate(size_t size);

@@ -1,0 +1,26 @@
+for i = 5;
+    for j = 2;
+        writeln(j);
+    endif;
+end;
+
+int x = 2;
+int c = 5;
+int res = x + c;
+
+writeln(res);
+
+string password = "";
+
+for i = inf;
+    read("Password: ", password, string);
+
+    if password = "password";
+        system("id");
+    endif;
+
+    if password = "exit";
+        writeln("stuff");
+    endif;
+
+end;

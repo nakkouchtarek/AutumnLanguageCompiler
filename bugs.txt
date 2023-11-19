@@ -1,0 +1,44 @@
+multiple if for strings is bugged
+declaring a function after code is bugged
+
+TEST_CODE
+
+func calculator(string message,int n);
+    int res = 0;
+
+    for i = n;
+        
+        read("Number: ", number, int);
+        read("Operator: ", operator, string)
+        read("Number2: ", number2, int);
+
+        if operator = "+";
+            res = number + number2;
+            writeln(res);
+        endif;
+
+        if operator = "-";
+            res = number - number2;
+        endif;
+
+    end;
+
+endfunc;
+
+for i = 5;
+    for j = 2;
+        writeln(j);
+    endif;
+end;
+
+int x = 2;
+int c = 5;
+int res = x + c;
+
+writeln(res);
+
+string password = "";
+
+read("Password: ", password, string);
+
+calculator("This is your result", 2);

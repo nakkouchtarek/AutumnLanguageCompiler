@@ -1,34 +1,9 @@
-int o1;
-int o2;
-int res;
-string op;
+read("Password: ", password, string);
 
-for i = inf;
+if password = "test";
+    writeln("ok");
+endif;
 
-    read("Elem1: ", o1);
-    read("Operator: ", op);
-    read("Elem2: ", o2);
-
-    if op = "+";
-        res = o1 + o2;
-    endif;
-
-    if op = "-";
-        res = o1 - o2;
-    endif;
-
-    if op = "*";
-        res = o1 * o2;
-    endif;
-
-    if op = "/";
-        res = o1 / o2;
-    endif;
-
-    if op = "exit":
-        exit(0);
-    endif;
-
-    writeln(res);
-
-end;
+if password = "test2";
+    writeln("ok2")
+endif;
